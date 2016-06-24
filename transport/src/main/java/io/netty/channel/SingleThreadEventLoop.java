@@ -20,7 +20,6 @@ import io.netty.util.internal.ObjectUtil;
 
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -30,9 +29,9 @@ import java.util.concurrent.ThreadFactory;
 public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor implements EventLoop {
 
     private final Queue<Runnable> tailTasks;
-    private final LongCallable runTimeoutUpdater = new LongCallable() {
+    private final LongConsumer runTimeoutUpdater = new LongConsumer() {
         @Override
-        public void call(long aLong) {
+        public void consume(long aLong) {
             runTimeout = aLong;
         }
     };
@@ -96,9 +95,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
             reject();
         }
 
-        if (!tailTasks.offer(task)) {
-            throw new RejectedExecutionException();
-        }
+        tailTasks.add(task);
 
         if (wakesUpForTask(task)) {
             wakeup(inEventLoop());
